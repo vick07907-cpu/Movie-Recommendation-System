@@ -74,7 +74,7 @@ class MovieRecommender:
         if progress_callback:
             progress_callback(100)
         
-        logger.info(f"Loaded {self.config['n_movies']:,} movies successfully")
+        logger.info(f"Loaded {self.config.get('n_movies', 'unknown')} movies successfully")
     
     def find_movie(self, title: str) -> Optional[str]:
         """Find closest matching movie title"""
@@ -112,30 +112,31 @@ class MovieRecommender:
             
             movie = self.metadata.iloc[idx]
             
-            # Rating filter
-            if min_rating and movie['vote_average'] < min_rating:
+            # Rating filter with safety get
+            vote_avg = movie.get('vote_average', 0)
+            if min_rating and vote_avg < min_rating:
                 continue
             
+            # Build recommendation item safely
             recommendations.append({
-                'title': movie['title'],
-                'release_date': movie['release_date'] if pd.notna(movie['release_date']) else 'Unknown',
-                'production': movie['primary_company'] if pd.notna(movie['primary_company']) else 'Unknown',
-                'genres': ', '.join(movie['genres'][:3]) if isinstance(movie['genres'], list) else 'N/A',
-                'rating': f"{movie['vote_average']:.1f}/10" if pd.notna(movie['vote_average']) else 'N/A',
-                'votes': f"{movie['vote_count']:,}" if pd.notna(movie['vote_count']) else 'N/A',
-                'similarity_score': f"{score:.3f}",
-                'imdb_id': movie['imdb_id'] if pd.notna(movie['imdb_id']) else None,
-                'poster_url': f"https://image.tmdb.org/t/p/w500{movie['poster_path']}" if pd.notna(movie['poster_path']) else None,
-                'google_link': f"https://www.google.com/search?q={'+'.join(movie['title'].split())}+movie",
-                'imdb_link': f"https://www.imdb.com/title/{movie['imdb_id']}" if pd.notna(movie['imdb_id']) else None
+                'id': movie.get('id', 'N/A'),
+                'title': movie.get('title', 'Unknown'),
+                'release_date': movie.get('release_date', 'Unknown'),
+                'vote_average': vote_avg,
+                'overview': movie.get('overview', ''),
+                'production': movie.get('primary_company', 'Unknown'),
+                'genres': movie.get('genres', 'Unknown'),
             })
         
+        # Return structured data for the results page
         return {
             'query_movie': matched_title,
             'source_movie': {
-                'production': source_movie['primary_company'] if pd.notna(source_movie['primary_company']) else 'Unknown',
-                'rating': f"{source_movie['vote_average']:.1f}/10" if pd.notna(source_movie['vote_average']) else 'N/A',
-                'genres': ', '.join(source_movie['genres'][:3]) if isinstance(source_movie['genres'], list) else 'N/A'
+                'title': source_movie.get('title', matched_title),
+                'overview': source_movie.get('overview', 'No description available.'),
+                'production': source_movie.get('primary_company', 'Unknown'),
+                'genres': source_movie.get('genres', 'Unknown'),
+                'vote_average': source_movie.get('vote_average', 0)
             },
             'recommendations': recommendations
         }
@@ -149,10 +150,8 @@ def _load_model_in_background():
     _MODEL_LOAD_PROGRESS = 0
     _LOAD_ERROR = None
     
-    # Check for model directory (configurable via settings or environment)
     model_dir = getattr(settings, 'MODEL_DIR', os.environ.get('MODEL_DIR', 'models'))
     
-    # Fallback to static directory if models directory doesn't exist
     if not Path(model_dir).exists():
         model_dir = 'static'
         logger.warning(f"Model directory not found, using static directory")
@@ -199,162 +198,89 @@ def _get_recommender():
 
 @require_http_methods(["GET", "POST"])
 def main(request):
-    """
-    Main view for movie recommendation system.
-    GET: Display search interface
-    POST: Process search and display recommendations
-    """
-    # Start loading model if not already loading/loaded
+    """Main view handling search and results display"""
     _start_model_loading()
-    
     recommender = _get_recommender()
     
-    # If model is still loading, show the page with loading state
     if recommender is None:
         if request.method == 'GET':
-            return render(request, 'recommender/index.html', {
-                'all_movie_names': [],
-                'total_movies': 0,
-            })
+            return render(request, 'recommender/index.html', {'all_movie_names': [], 'total_movies': 0})
         else:
-            # For POST requests, return error if model not ready
             return render(request, 'recommender/index.html', {
-                'all_movie_names': [],
-                'total_movies': 0,
-                'error_message': 'Model is still loading. Please wait a moment and try again.',
+                'all_movie_names': [], 
+                'total_movies': 0, 
+                'error_message': 'Model is still loading. Please wait a moment and try again.'
             })
     
-    # Model is loaded, proceed normally
     titles_list = list(recommender.title_to_idx.keys())
     
     if request.method == 'GET':
-        return render(
-            request,
-            'recommender/index.html',
-            {
-                'all_movie_names': titles_list,
-                'total_movies': len(titles_list),
-            }
-        )
+        return render(request, 'recommender/index.html', {
+            'all_movie_names': titles_list, 
+            'total_movies': len(titles_list)
+        })
     
-    # POST request - process search
     movie_name = request.POST.get('movie_name', '').strip()
     
     if not movie_name:
-        return render(
-            request,
-            'recommender/index.html',
-            {
-                'all_movie_names': titles_list,
-                'total_movies': len(titles_list),
-                'error_message': 'Please enter a movie name.',
-            }
-        )
+        return render(request, 'recommender/index.html', {
+            'all_movie_names': titles_list, 
+            'total_movies': len(titles_list),
+            'error_message': 'Please enter a movie name.'
+        })
     
-    # Get recommendations
     result = recommender.get_recommendations(movie_name, n=15)
     
     if 'error' in result:
-        return render(
-            request,
-            'recommender/index.html',
-            {
-                'all_movie_names': titles_list,
-                'total_movies': len(titles_list),
-                'input_movie_name': movie_name,
-                'error_message': result['error'],
-                'suggestions': result.get('suggestions', [])
-            }
-        )
-    
-    return render(
-        request,
-        'recommender/result.html',
-        {
+        return render(request, 'recommender/index.html', {
             'all_movie_names': titles_list,
-            'input_movie_name': result['query_movie'],
-            'source_movie': result['source_movie'],
-            'recommended_movies': result['recommendations'],
-            'total_recommendations': len(result['recommendations']),
-        }
-    )
-
+            'total_movies': len(titles_list),
+            'input_movie_name': movie_name,
+            'error_message': result['error'],
+            'suggestions': result.get('suggestions', [])
+        })
+    
+    return render(request, 'recommender/result.html', {
+        'all_movie_names': titles_list,
+        'input_movie_name': result['query_movie'],
+        'source_movie': result['source_movie'],
+        'recommended_movies': result['recommendations'],
+        'total_recommendations': len(result['recommendations']),
+    })
 
 @require_http_methods(["GET"])
 def search_movies(request):
-    """API endpoint for searching movies (autocomplete)"""
+    """Autocomplete API endpoint"""
     query = request.GET.get('q', '').strip()
-    
-    if len(query) < 2:
-        return JsonResponse({'movies': [], 'count': 0})
-    
+    if len(query) < 2: return JsonResponse({'movies': [], 'count': 0})
     try:
         recommender = _get_recommender()
-        
-        if recommender is None:
-            return JsonResponse({'movies': [], 'count': 0, 'loading': True})
-        
+        if recommender is None: return JsonResponse({'movies': [], 'count': 0, 'loading': True})
         matching_movies = recommender.search_movies(query, n=20)
-        
-        return JsonResponse({
-            'movies': matching_movies,
-            'count': len(matching_movies)
-        })
-        
+        return JsonResponse({'movies': matching_movies, 'count': len(matching_movies)})
     except Exception as e:
-        logger.error(f"Error in search: {e}")
         return JsonResponse({'error': 'Search failed'}, status=500)
-
 
 @require_http_methods(["GET"])
 def model_status(request):
-    """API endpoint to check model loading status"""
+    """Status check API endpoint"""
     global _RECOMMENDER, _MODEL_LOADING, _MODEL_LOAD_PROGRESS, _LOAD_ERROR
-    
-    # Start loading if not already started
     _start_model_loading()
-    
-    if _LOAD_ERROR:
-        return JsonResponse({
-            'loaded': False,
-            'progress': 0,
-            'status': 'error',
-            'error': _LOAD_ERROR
-        })
-    elif _RECOMMENDER is not None:
-        return JsonResponse({
-            'loaded': True,
-            'progress': 100,
-            'status': 'ready'
-        })
-    elif _MODEL_LOADING:
-        return JsonResponse({
-            'loaded': False,
-            'progress': _MODEL_LOAD_PROGRESS,
-            'status': 'loading'
-        })
-    else:
-        return JsonResponse({
-            'loaded': False,
-            'progress': 0,
-            'status': 'initializing'
-        })
-
+    if _LOAD_ERROR: return JsonResponse({'loaded': False, 'progress': 0, 'status': 'error', 'error': _LOAD_ERROR})
+    elif _RECOMMENDER is not None: return JsonResponse({'loaded': True, 'progress': 100, 'status': 'ready'})
+    elif _MODEL_LOADING: return JsonResponse({'loaded': False, 'progress': _MODEL_LOAD_PROGRESS, 'status': 'loading'})
+    else: return JsonResponse({'loaded': False, 'progress': 0, 'status': 'initializing'})
 
 @require_http_methods(["GET"])
 def health_check(request):
-    """Health check endpoint for monitoring"""
+    """System health check"""
     try:
         recommender = _get_recommender()
         return JsonResponse({
             'status': 'healthy',
-            'movies_loaded': recommender.config['n_movies'],
+            'movies_loaded': len(recommender.title_to_idx),
             'model_dir': str(recommender.model_dir),
             'model_loaded': True
         })
     except Exception as e:
-        logger.error(f"Health check failed: {e}")
-        return JsonResponse({
-            'status': 'unhealthy',
-            'error': str(e)
-        }, status=503)
+        return JsonResponse({'status': 'unhealthy', 'error': str(e)}, status=503)

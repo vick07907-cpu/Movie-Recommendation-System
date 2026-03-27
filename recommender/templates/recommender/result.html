@@ -9,7 +9,6 @@
     
     <link rel="shortcut icon" href="{% static 'logo.ico' %}">
     
-    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -107,12 +106,6 @@
             color: var(--primary-color);
         }
 
-        .logo-small {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-        }
-
         .back-button {
             display: inline-flex;
             align-items: center;
@@ -185,6 +178,8 @@
             transition: var(--transition);
             position: relative;
             overflow: hidden;
+            display: flex;
+            flex-direction: column;
         }
 
         .movie-card::before {
@@ -214,22 +209,16 @@
             position: absolute;
             top: 1rem;
             right: 1rem;
-            width: 40px;
-            height: 40px;
+            width: 35px;
+            height: 35px;
             background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: 700;
-            font-size: 0.9rem;
+            font-size: 0.8rem;
             box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
-        }
-
-        .movie-icon {
-            font-size: 2rem;
-            margin-bottom: 1rem;
-            display: block;
         }
 
         .movie-title {
@@ -238,7 +227,7 @@
             margin-bottom: 1rem;
             color: var(--text-primary);
             line-height: 1.4;
-            padding-right: 50px;
+            padding-right: 40px;
         }
 
         .movie-details {
@@ -246,11 +235,12 @@
             flex-direction: column;
             gap: 0.5rem;
             margin-bottom: 1.25rem;
+            flex-grow: 1;
         }
 
         .movie-detail {
             display: flex;
-            align-items: center;
+            align-items: flex-start;
             gap: 0.5rem;
             font-size: 0.9rem;
             color: var(--text-secondary);
@@ -264,21 +254,20 @@
         .movie-actions {
             display: flex;
             gap: 0.75rem;
-            flex-wrap: wrap;
+            margin-top: auto;
         }
 
         .movie-link {
             flex: 1;
-            min-width: 120px;
             display: inline-flex;
             align-items: center;
             justify-content: center;
             gap: 0.5rem;
-            padding: 0.75rem 1.25rem;
+            padding: 0.75rem;
             border-radius: var(--border-radius);
             text-decoration: none;
             font-weight: 500;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             transition: var(--transition);
             border: 2px solid;
         }
@@ -291,55 +280,20 @@
 
         .link-primary:hover {
             background: var(--primary-dark);
-            border-color: var(--primary-dark);
             transform: translateY(-2px);
-        }
-
-        .link-secondary {
-            background: transparent;
-            border-color: var(--surface-light);
-            color: var(--text-secondary);
-        }
-
-        .link-secondary:hover {
-            border-color: var(--primary-color);
-            color: var(--primary-color);
-            transform: translateY(-2px);
-        }
-
-        /* Footer */
-        .footer {
-            text-align: center;
-            padding: 2rem 1rem;
-            color: var(--text-secondary);
-            font-size: 0.875rem;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         /* Animations */
         @keyframes fadeInDown {
-            from {
-                opacity: 0;
-                transform: translateY(-30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            from { opacity: 0; transform: translateY(-30px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
-        /* Scroll-based animation for cards */
         .movie-card {
             opacity: 0;
             transform: translateY(30px);
@@ -351,110 +305,54 @@
             transform: translateY(0);
         }
 
-        @keyframes cardAppear {
-            from {
-                opacity: 0;
-                transform: scale(0.95) translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: scale(1) translateY(0);
-            }
-        }
-
-        /* Responsive Design */
         @media (max-width: 768px) {
-            .header {
-                padding: 1rem;
-            }
-
-            .header-content {
-                justify-content: center;
-            }
-
-            .results-header {
-                padding: 2rem 1rem;
-            }
-
-            .movies-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .movie-card {
-                padding: 1.5rem;
-            }
-
-            .movie-actions {
-                flex-direction: column;
-            }
-
-            .movie-link {
-                width: 100%;
-            }
-        }
-
-        /* No results state */
-        .no-results {
-            text-align: center;
-            padding: 4rem 2rem;
-            color: var(--text-secondary);
-        }
-
-        .no-results-icon {
-            font-size: 4rem;
-            margin-bottom: 1rem;
+            .movies-grid { grid-template-columns: 1fr; }
         }
     </style>
 </head>
 <body>
     <div class="background-animation"></div>
 
-    <!-- Header -->
     <header class="header">
         <div class="header-content">
             <a href="/" class="logo-link">
                 <span>Movie Recommendation System</span>
             </a>
-            <a href="/" class="back-button">
-                ← New Search
-            </a>
+            <a href="/" class="back-button">← New Search</a>
         </div>
     </header>
 
-    <!-- Results Header -->
     <div class="results-header">
         <h1 class="results-title">
             Movies like <span class="searched-movie">{{ input_movie_name }}</span>
         </h1>
         {% if source_movie %}
         <p class="results-subtitle">
-            {{ source_movie.production }} | {{ source_movie.rating }} | {{ source_movie.genres }}
+            {{ source_movie.genres }} | ⭐ {{ source_movie.vote_average }}
         </p>
         {% endif %}
         <p class="results-subtitle">
-            We found {{ total_recommendations|default:"15" }} amazing recommendations for you
+            Showing top {{ recommendations|length|default:total_recommendations }} matches
         </p>
     </div>
 
-    <!-- Main Content -->
     <main class="container">
         {% if recommended_movies %}
         <div class="movies-grid">
             {% for movie in recommended_movies %}
             <article class="movie-card">
-                <div class="movie-rank">{{ forloop.counter }}</div>
-                <span class="movie-icon">🎬</span>
+                <div class="movie-rank">#{{ forloop.counter }}</div>
                 
                 <h2 class="movie-title">{{ movie.title }}</h2>
                 
                 <div class="movie-details">
                     <div class="movie-detail">
                         <span class="detail-icon">⭐</span>
-                        <span>{{ movie.rating }} ({{ movie.votes }} votes)</span>
+                        <span>{{ movie.vote_average }} / 10</span>
                     </div>
                     <div class="movie-detail">
                         <span class="detail-icon">📅</span>
-                        <span>{{ movie.release_date }}</span>
+                        <span>{{ movie.release_date|default:"N/A" }}</span>
                     </div>
                     <div class="movie-detail">
                         <span class="detail-icon">🎭</span>
@@ -467,78 +365,38 @@
                 </div>
 
                 <div class="movie-actions">
-                    <a href="{{ movie.google_link }}" target="_blank" rel="noopener noreferrer" class="movie-link link-primary">
-                        🔍 Google
+                    <a href="https://www.google.com/search?q={{ movie.title }}+movie" 
+                       target="_blank" rel="noopener noreferrer" class="movie-link link-primary">
+                        🔍 Search Info
                     </a>
-                    {% if movie.imdb_link %}
-                    <a href="{{ movie.imdb_link }}" target="_blank" rel="noopener noreferrer" class="movie-link link-secondary">
-                        ⭐ IMDb
-                    </a>
-                    {% endif %}
                 </div>
             </article>
             {% endfor %}
         </div>
         {% else %}
-        <div class="no-results">
-            <div class="no-results-icon">😕</div>
+        <div style="text-align: center; padding: 4rem;">
             <h2>No recommendations found</h2>
-            <p>We couldn't find any recommendations for this movie. Please try another one.</p>
+            <p>Try searching for a different title!</p>
         </div>
         {% endif %}
     </main>
 
-    <!-- Footer -->
-    <footer class="footer">
-        <p>Made with ❤️ for movie lovers | © <span id="currentYear"></span> Movie Recommendation System</p>
+    <footer style="text-align: center; padding: 2rem; color: var(--text-secondary); border-top: 1px solid rgba(255,255,255,0.1);">
+        <p>© <span id="year"></span> Movie Discovery System</p>
     </footer>
-    <script>
-        // Set dynamic year in footer
-        document.addEventListener("DOMContentLoaded", function() {
-            var currentYear = new Date().getFullYear();
-            document.getElementById("currentYear").textContent = currentYear;
-        });
-    </script>
 
     <script>
-        // Smooth scroll to top
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-
-        // Scroll-based animation for cards
-        const observerOptions = {
-            root: null,
-            rootMargin: '0px',
-            threshold: 0.1
-        };
+        document.getElementById("year").textContent = new Date().getFullYear();
 
         const observer = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
                 if (entry.isIntersecting) {
                     entry.target.classList.add('animate-in');
-                    observer.unobserve(entry.target);
                 }
             });
-        }, observerOptions);
+        }, { threshold: 0.1 });
 
-        // Observe all movie cards
-        document.addEventListener('DOMContentLoaded', () => {
-            const cards = document.querySelectorAll('.movie-card');
-            cards.forEach(card => {
-                observer.observe(card);
-            });
-        });
-
-        // Add interactive feedback
-        document.querySelectorAll('.movie-card').forEach(card => {
-            card.addEventListener('click', function(e) {
-                if (e.target.tagName !== 'A') {
-                    this.style.transform = 'scale(0.98) translateY(0)';
-                    setTimeout(() => {
-                        this.style.transform = '';
-                    }, 100);
-                }
-            });
-        });
+        document.querySelectorAll('.movie-card').forEach(card => observer.observe(card));
     </script>
 </body>
 </html>
